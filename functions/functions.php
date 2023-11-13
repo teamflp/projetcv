@@ -118,6 +118,7 @@ function listEtudiants(PDO $db, $page = 1, $etudiantsParPage = 10): array {
     return $users;
 }
 
+// Fonction pour gérer la pagination des utilisateurs
 function pagination($db) {
     $page = $_GET['page'] ?? 1;
     $etudiantsParPage = 3;
@@ -135,6 +136,7 @@ function pagination($db) {
     return $links;
 }
 
+// Fonction pour récupérer le nombre total d'étudiants
 function getTotalEtudiants($db) {
     $stmt = $db->query("SELECT COUNT(*) FROM etudiants");
     return $stmt->fetchColumn();
@@ -242,6 +244,7 @@ function deleteUser($db, $id) {
     }
 }
 
+// Système d'authentification
 function login($db) {
     // Récupération et nettoyage des données du formulaire
     $email = cleanInput($_POST['email'] ?? '', 'email');
@@ -277,7 +280,7 @@ function login($db) {
                     $_SESSION['user_email'] = $email; // Stocker l'email dans la session
 
                     // Gérer "Se souvenir de moi"
-                    if (isset($_POST['remember']) && $_POST['remember'] == '1') {
+                    if (isset($_POST['remember_me']) && $_POST['remember_me'] == '1') {
                         // Créer un jeton unique pour l'utilisateur
                         $token = bin2hex(random_bytes(50)); // exemple de jeton: 12345678901234567890123456789012345678901234567890
 
@@ -288,6 +291,9 @@ function login($db) {
                         $stmt = $db->prepare("UPDATE etudiants SET remember_token = :token WHERE id = :id");
                         $stmt->execute([':token' => $token, ':id' => $user['id']]);
                     }
+
+                    echo "Redirection en cours..."; 
+                    exit;
 
                     // Redirection vers la page d'accueil
                     header('Location: index.php');
@@ -318,13 +324,14 @@ function autoLogin(PDO $db) {
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($user) {
-            // L'utilisateur est reconnu
+            // L'utilisateur est reconnu.
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['user_email'] = $user['email']; // Stocker l'email dans la session
         }
     }
 }
 
+// Fonction pour filtrer les données de l'utilisateur
 function filterData($db) {
     $search = $_GET['search'] ?? '';
     $users = [];
@@ -393,10 +400,50 @@ function modifyPassword($db, $userId) {
     return ['errors' => $errors];
 }
 
+/**
+ * Sauvegarde la base de données dans un fichier SQL.
+ *
+ * Cette fonction crée un dump de la base de données et le sauvegarde dans un fichier
+ * dans le répertoire spécifié. Le nom du fichier contient la date et l'heure actuelles
+ * ainsi qu'une chaîne aléatoire pour éviter les doublons.
+ *
+ * @param string $backupPath Chemin du répertoire où le fichier de sauvegarde sera enregistré.
+ *
+ * @return string Message HTML indiquant le résultat de l'opération. En cas de succès, un message
+ * de confirmation est retourné. En cas d'échec, un message d'erreur est retourné avec les détails.
+ *
+ * @throws Exception Si la date et l'heure ne peuvent pas être déterminées.
+ *
+ * Usage:
+ *   echo sauvegarderBaseDeDonnees('/path/to/backup/dir/');
+ */
+function sauvegarderBaseDeDonnees($backupPath): string
+{
+    global $DB_USER, $DB_PASSWORD, $DB_HOST, $DB_NAME;
+
+    $date = new DateTime();
+    $date->setTimezone(new DateTimeZone('Europe/Paris'));
+    
+    $randomStr = substr(md5(rand()), 0, 10);
+    $filename = $backupPath . $date->format('Y-m-d-H-i') . '-' . $randomStr . '.sql';
+
+    $command = "mysqldump --user=" . $DB_USER . " --password=" . $DB_PASSWORD . " --host=" . $DB_HOST . " " . $DB_NAME . " --result-file={$filename} 2>&1";
+
+    $output = null;
+    $returnVar = null;
+    exec($command, $output, $returnVar);
+
+    if ($returnVar === 0) {
+        return '<p class="text-success text-lg">La sauvegarde de la base de données <b>'. $DB_NAME . '</b> a été réalisée avec succès.</p>';
+    } else {
+        return '<p class="text-success">Erreur lors de la sauvegarde de la base de données. ' . implode("\n", $output). '</p>';
+    }
+}
+
 // Fonction pour logger les erreurs
 function logError($exception) {
     // Chemin du fichier de log
-    $logFile = '../log/logfile.log'; // Modifiez le chemin selon votre structure de fichiers
+    $logFile = 'log/logfile.log'; // Modifiez le chemin selon votre structure de fichiers
 
     // Message à logger
     $logMessage = '[' . date('d-m-Y H:i:s') . '] Erreur: ' . $exception->getMessage();
@@ -406,3 +453,4 @@ function logError($exception) {
     // Écriture dans le fichier de log
     file_put_contents($logFile, $logMessage, FILE_APPEND | LOCK_EX);
 }
+

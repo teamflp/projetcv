@@ -1,7 +1,27 @@
-<?php include "includes/header.php"; ?>
+<style>
+    .draggable {
+    transition: transform 0.3s ease;
+}
+
+.drag-over {
+    background-color: #f0f0f0; /* Changement de couleur de fond pour les conteneurs pendant le drag */
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+.dragging {
+    transform: scale(1.05); /* Agrandissement légèrement l'élément en cours de déplacement */
+    box-shadow: 0 0 10px rgba(0,0,0,0.2); /* Ajout d'une ombre pour le mettre en évidence */
+}
+
+</style>
 <?php 
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
+
+include "includes/header.php";
+
+ini_set('output_buffering', 'off');
+ini_set('display_errors', 0);
+ini_set('display_startup_errors', 0);
 error_reporting(E_ALL);
 
 require_once "functions/functions.php"; 
@@ -19,7 +39,7 @@ if (!isset($_SESSION['user_id'])) {
 
 // Pagination
 $page = $_GET['page'] ?? 1;
-$etudiantsParPage = 12;
+$etudiantsParPage = 10;
 $stmt = $db->query("SELECT COUNT(*) FROM etudiants");
 $totalEtudiants = $stmt->fetchColumn();
 $nombrePages = ceil($totalEtudiants / $etudiantsParPage);
@@ -49,7 +69,7 @@ $etudiants = listEtudiants($db, $page, $etudiantsParPage);
         <?php if (!empty($etudiants)): ?>
             <div class="row">
                 <?php foreach ($etudiants as $etudiant): ?>
-                    <div class="col-md-3 mb-2">
+                <div class="col-md-3 mb-2 draggable" draggable="true" id="etudiant-<?= $etudiant['id'] ?>">
                         <div class="card"> 
                             <div class="card-body">
                                 <h5 class="card-title">Nom &nbsp;&nbsp;&nbsp;: <?= htmlspecialchars($etudiant['nom']) ?></h5>
@@ -80,6 +100,68 @@ $etudiants = listEtudiants($db, $page, $etudiantsParPage);
         <?php endif; ?>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const draggables = document.querySelectorAll('.draggable');
+    const containers = document.querySelectorAll('.row');
+
+    draggables.forEach(draggable => {
+        draggable.addEventListener('dragstart', () => {
+            draggable.classList.add('dragging');
+            draggable.style.opacity = '0.5';
+        });
+
+        draggable.addEventListener('dragend', () => {
+            draggable.classList.remove('dragging');
+            draggable.style.opacity = '1';
+        });
+    });
+
+    containers.forEach(container => {
+        container.addEventListener('dragover', e => {
+            e.preventDefault();
+            const draggable = document.querySelector('.dragging');
+            container.appendChild(draggable); // Déplace la carte dans le conteneur actuel
+
+            const afterElement = getDragAfterElement(container, e.clientY);
+            if (afterElement) {
+                container.insertBefore(draggable, afterElement);
+            } else {
+                container.appendChild(draggable); // Déplace la carte à la fin du conteneur si aucun élément n'est trouvé
+            }
+        });
+
+        container.addEventListener('dragenter', () => {
+            container.classList.add('drag-over');
+        });
+
+        container.addEventListener('dragleave', () => {
+            container.classList.remove('drag-over');
+        });
+    });
+
+    function getDragAfterElement(container, y) {
+        const draggableElements = [...container.querySelectorAll('.draggable:not(.dragging)')];
+
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child };
+            } else {
+                return closest;
+            }
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+});
+
+// Confirmation de suppression d'un étudiant
+function confirmDelete() {
+    return confirm("Êtes-vous sûr de vouloir supprimer cet étudiant ?");
+}
+
+</script>
 
 <script src="assets/js/scripts.js"></script>
 

@@ -77,13 +77,9 @@ document.addEventListener("DOMContentLoaded", function() {
         if (!isValid) {
             e.preventDefault();
         }
-    });
+    }); 
+    
     
 });
-
-// Confirmation de suppression d'un étudiant
-function confirmDelete() {
-    return confirm("Êtes-vous sûr de vouloir supprimer cet étudiant ?");
-}
 
 

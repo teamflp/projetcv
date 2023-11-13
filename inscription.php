@@ -77,6 +77,10 @@ global $db;
                     <input type="password" class="form-control pt-3 pb-3" id="confirm_pwd" name="confirm_pwd" placeholder="Confirmer de mot passe">
                     <div class="error" id="errorConfirmPwd"></div>
                 </div>
+                <div class="form-group mb-3">
+                    <label class="control-label">Ajouter un avatar</label>
+                    <input type="file" class="form-control pt-3 pb-3" id="image" name="image" placeholder="Ajouter un avatar">
+                </div>
                 <div class="form-group mt-3">
                     <button type="submit" class="btn btn-primary">Inscription</button>
                     <button type="reset" class="btn btn-secondary">Réinitialiser</button>

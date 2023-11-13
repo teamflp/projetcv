@@ -96,5 +96,13 @@ $etudiants = listEtudiants($db, $page, $etudiantsParPage);
     </div>
 </div>
 
+<script>
+    // Confirmation de suppression d'un étudiant
+function confirmDelete() {
+    return confirm("Êtes-vous sûr de vouloir supprimer cet étudiant ?");
+}
+
+</script>
+
 <script src="assets/js/scripts.js"></script>
 <?php include "includes/footer.php"; ?>
